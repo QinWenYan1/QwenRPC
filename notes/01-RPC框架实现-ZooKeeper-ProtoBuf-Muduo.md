@@ -83,25 +83,25 @@
 <a id="id2"></a>
 ## ✅ 知识点2: 三大技术支柱分工
 
-**一个最小可用的 RPC 框架 = 服务寻址 + 数据序列化 + 网络收发，三者各由一个成熟组件承担**
+**核心组件...**
 
-| 组件 | 角色 | 核心能力 |
-|------|------|----------|
-| `ZooKeeper` | **服务注册与发现中心** | 分布式服务协调中间件，管理"服务名 → IP:Port"映射 |
-| `ProtoBuf(Protocol Buffers)` | **序列化/反序列化** | Key-Value **二进制**格式存储，体积小，适合网络传输 |
-| `Muduo` | **网络通信库** | 基于 `(Multi-)Reactor` 模型的多线程网络库，高并发处理远端请求 |
+- **一个最小可用的 RPC 框架 = 服务寻址 + 数据序列化 + 网络收发，三者各由一个成熟组件承担**
 
-**各组件协作方式：**
-- **[ZooKeeper](https://zookeeper.apache.org/)**：
-  - 服务方法提供者提前将本端对外提供的**服务方法名及自己的通信地址信息（IP:Port）注册到 ZooKeeper**。
-  - Caller 发起调用时，先向 ZooKeeper 查询目标服务所在的服务器地址，再向该服务器（Callee）发起请求
-- **[ProtoBuf](https://protobuf.com.cn/overview/)**：
-  - Caller 和 Callee 之间的数据交互全部先经 ProtoBuf 序列化成二进制字节流再走网络
-- **[Muduo](https://github.com/chenshuo/muduo)**：
-  - 承担 RPC 框架中的网络通信部分（监听、连接、收发）
+  | 组件 | 角色 | 核心能力 |
+  |------|------|----------|
+  | `ZooKeeper` | **服务注册与发现中心** | 分布式服务协调中间件，管理"服务名 → IP:Port"映射 |
+  | `ProtoBuf(Protocol Buffers)` | **序列化/反序列化** | Key-Value **二进制**格式存储，体积小，适合网络传输 |
+  | `Muduo` | **网络通信库** | 基于 `(Multi-)Reactor` 模型的多线程网络库，高并发处理远端请求 |
 
-**注意点**
-> ⚠️ **关键区分**：三者职责**完全正交**——ZooKeeper 只管"找到谁"，ProtoBuf 只管"说什么格式"，Muduo 只管"怎么送到"。设计 QwenRPC 时应保持这种分层解耦。
+- **各组件协作方式：**
+  - **[ZooKeeper](https://zookeeper.apache.org/)**：
+    - 服务方法提供者提前将本端对外提供的**服务方法名及自己的通信地址信息（IP:Port）注册到 ZooKeeper**。
+    - Caller 发起调用时，先向 ZooKeeper 查询目标服务所在的服务器地址，再向该服务器（Callee）发起请求
+  - **[ProtoBuf](https://protobuf.com.cn/overview/)**：
+    - Caller 和 Callee 之间的数据交互全部先经 ProtoBuf 序列化成二进制字节流再走网络
+  - **[Muduo](https://github.com/chenshuo/muduo)**：
+    - 承担 RPC 框架中的网络通信部分（监听、连接、收发）
+
 > 💡 **理解技巧**：类比寄快递——ZooKeeper 是地址簿，ProtoBuf 是打包规范，Muduo 是快递员。
 
 
