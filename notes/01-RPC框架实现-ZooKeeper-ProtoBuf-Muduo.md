@@ -97,7 +97,7 @@
   - Caller 发起调用时，先向 ZooKeeper 查询目标服务所在的服务器地址，再向该服务器（Callee）发起请求
 - **[ProtoBuf](https://protobuf.com.cn/overview/)**：
   - Caller 和 Callee 之间的数据交互全部先经 ProtoBuf 序列化成二进制字节流再走网络
-- **Muduo**：
+- **[Muduo](https://github.com/chenshuo/muduo)**：
   - 承担 RPC 框架中的网络通信部分（监听、连接、收发）
 
 **注意点**
