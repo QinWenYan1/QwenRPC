@@ -180,17 +180,17 @@
 
 - 不建议使用的情况：
 
-  1. **大于几兆字节的大数据**：Protobuf 通常假设整条消息可一次性载入内存，大数据可能导致内存使用激增。
-  2. **需要直接比较二进制相等性的场景**：同一条消息可能有多种不同二进制序列化结果，必须先解析再比较内容。
-  3. **消息本身未压缩**：虽然可以外加 zip/gzip，但 JPEG、PNG 等专用压缩算法对特定数据更优。
-  4. **大型多维浮点数组的科学/工程计算**：在体积和速度上不如 FITS 等专业格式。
-  5. **Fortran、IDL 等非面向对象语言**：Protobuf 对这些语言支持有限。
-  6. **需要自描述数据的场景**：Protobuf 消息本身不携带数据模式，需要对应 `.proto` 文件才能完整解释。
-  7. **要求正式标准的法律/政策环境**：Protobuf 不是任何标准化组织的正式标准。
+  1. **大于几兆字节的大数据**：Protobuf 通常假设整条消息可一次性载入内存，大数据可能导致内存使用激增
+  2. **需要直接比较二进制相等性的场景**：同一条消息可能有多种不同二进制序列化结果，必须先解析再比较内容
+  3. **需要专业压缩算法的场景**：Protobuf 消息本身未压缩，虽然可以外加 zip/gzip，但 JPEG、PNG 等专用压缩算法对特定数据更优
+  4. **大型多维浮点数组的科学/工程计算**：在体积和速度上不如 FITS 等专业格式
+  5. **Fortran、IDL 等非面向对象语言**：Protobuf 对这些语言支持有限
+  6. **需要自描述数据的场景**：Protobuf 消息本身不携带数据模式，消息本身不描述其数据，需要对应 `.proto` 文件才能完整解释
+  7. **要求正式标准的法律/政策环境**：Protobuf 不是任何标准化组织的正式标准
 
-> ⚠️ **关键区分**：Protobuf 的「紧凑」不等于「压缩」，它只是去掉了字段名等冗余。
-> 💡 **理解技巧**：Protobuf 擅长「小而结构化的消息」，不适合「大文件、多媒体、科学数组」。
-> 📋 **术语提醒**：`自描述（self-describing）` 指数据本身携带完整的结构说明。
+> ⚠️ **关键区分**：Protobuf 的「紧凑」不等于「压缩」，它只是去掉了字段名等冗余
+> 💡 **理解技巧**：Protobuf 擅长「小而结构化的消息」，不适合「大文件、多媒体、科学数组」
+> 📋 **术语提醒**：`自描述（self-describing）` 指数据本身携带完整的结构说明
 
 ---
 
@@ -214,60 +214,62 @@
 
 **Protobuf 的工作流程可分为三个主要阶段：定义 → 生成 → 使用。**
 
-FSM 风格流程：
+- FSM 风格流程：
+  ![alt text](images/2.png)
+  - **阶段1: 创建 `.proto` 文件**
+    - 事件：开发者定义 `message` 和字段
+    - 动作：编写 `.proto` 文件
+    - 下一状态：代码生成
 
-- **阶段1: 创建 `.proto` 文件**
-  - 事件：开发者定义 `message` 和字段
-  - 动作：编写 `.proto` 文件
-  - 下一状态：代码生成
+  - **阶段2: 调用 protoc 生成代码**
+    - 事件：执行 `protoc --<语言>_out=...`
+    - 动作：编译器读取 `.proto` 并为指定语言生成操作类
+    - 下一状态：业务代码使用
 
-- **阶段2: 调用 protoc 生成代码**
-  - 事件：执行 `protoc --<语言>_out=...`
-  - 动作：编译器读取 `.proto` 并为指定语言生成操作类
-  - 下一状态：业务代码使用
+  - **阶段3: 在业务代码中序列化/反序列化**
+    - 事件：程序运行时需要读写数据
+    - 动作：调用生成类的方法构建对象、写入流、或从流解析
+    - 下一状态：结束或回到阶段3继续处理更多数据
 
-- **阶段3: 在业务代码中序列化/反序列化**
-  - 事件：程序运行时需要读写数据
-  - 动作：调用生成类的方法构建对象、写入流、或从流解析
-  - 下一状态：结束或回到阶段3继续处理更多数据
+- **自动生成的代码会提供丰富方法**：
+  - 从文件或流读取数据
+  - 提取单个字段值
+  - 检查字段是否存在
+  - 将数据重新序列化到文件或流
 
-自动生成的代码会提供丰富方法：
-- 从文件或流读取数据；
-- 提取单个字段值；
-- 检查字段是否存在；
-- 将数据重新序列化到文件或流。
+- **示例/实践**
+  1. 一个 `.proto` 定义：
+      ```protobuf
+      message Person {
+        string name = 1;
+        int32 id = 2;
+        string email = 3;
+      }
+      ```
+  2. 编译此 `.proto` 文件会创建一个 `Builder` 类，您可以使用它来创建新实例，如以下 Java 代码所示编程
 
-**示例/实践**
-```protobuf
-message Person {
-  string name = 1;
-  int32 id = 2;
-  string email = 3;
-}
-```
+      ```java
+      // 序列化
+      Person john = Person.newBuilder()
+          .setId(1234)
+          .setName("John Doe")
+          .setEmail("jdoe@example.com")
+          .build();
+      output = new FileOutputStream(args[0]);
+      john.writeTo(output);
+      ```
+  3. 然后，您可以使用 protocol buffers 在其他语言（如 C++）中创建的方法来反序列化数据
+      ```cpp
+      // 反序列化
+      Person john;
+      fstream input(argv[1], ios::in | ios::binary);
+      john.ParseFromIstream(&input);
+      int id = john.id();
+      std::string name = john.name();
+      std::string email = john.email();
+      ```
 
-```java
-// 序列化
-Person john = Person.newBuilder()
-    .setId(1234)
-    .setName("John Doe")
-    .setEmail("jdoe@example.com")
-    .build();
-output = new FileOutputStream(args[0]);
-john.writeTo(output);
-```
 
-```cpp
-// 反序列化
-Person john;
-fstream input(argv[1], ios::in | ios::binary);
-john.ParseFromIstream(&input);
-int id = john.id();
-std::string name = john.name();
-std::string email = john.email();
-```
-
-**注意点**
 > ⚠️ **关键区分**：`.proto` 是静态定义，生成代码后才能在业务代码里使用 Builder/解析方法。
 > 💡 **理解技巧**：Java 用 `Builder` 模式构造对象（先 `newBuilder()` 设置字段，再 `build()` 生成对象），C++ 直接修改对象字段后调用 `ParseFromIstream`。
 > 📋 **术语提醒**：`ParseFromIstream` 是 C++ 运行时将二进制流解析为对象的方法。
