@@ -63,6 +63,23 @@
 
 ---
 
+## 🐳 Docker 开发环境
+
+本项目提供一键可用的 Docker 开发镜像，预装了 C++ 工具链、Protobuf、Muduo、ZooKeeper 等全部依赖。
+
+- 详细说明：[docs/docker-dev-setup.md](docs/docker-dev-setup.md)
+- 快速开始：
+
+  ```bash
+  docker pull cspenguin/qwenrpc-dev:latest
+  docker run -it --rm -v "$(pwd)":/workspace -w /workspace cspenguin/qwenrpc-dev:latest
+  ```
+
+> 请将 `cspenguin` 替换为实际的 Docker Hub 用户名。
+
+
+---
+
 ## 🗺️ Roadmap
 
 > 采用「完成即划掉」的待办清单风格，随项目推进持续更新。
