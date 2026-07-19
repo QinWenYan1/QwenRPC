@@ -59,94 +59,93 @@
 
 **一条 `protoc` 命令，把 `.proto` 文件变成 `.pb.h` + `.pb.cc` 两个 C++ 文件。**
 
-**核心机制：**
+- **核心机制：**
 
-1. **生成开关**
-   - 调用编译器时通过 `--cpp_out=` 标志生成 C++ 输出
-   - 参数是你希望编译器写入 C++ 输出的目录
+  1. **生成开关**
+      - 调用编译器时通过 `--cpp_out=` 标志生成 C++ 输出
+      - 参数是你希望编译器写入 C++ 输出的目录
 
-2. **输出文件规则**
-   - 编译器为**每个**输入的 `.proto` 文件创建一个头文件和一个实现文件
-   - 扩展名 `.proto` 分别替换为 `.pb.h`（头文件）或 `.pb.cc`（实现文件）
-   - `--proto_path=`（或 `-I`）指定的源路径，替换为 `--cpp_out=` 指定的输出路径
+  2. **输出文件规则**
+      - 编译器为**每个**输入的 `.proto` 文件创建一个头文件和一个实现文件
+      - 扩展名 `.proto` 分别替换为 `.pb.h`（头文件）或 `.pb.cc`（实现文件）
+      - `--proto_path=`（或 `-I`）指定的源路径，替换为 `--cpp_out=` 指定的输出路径
 
-**示例/实践**
-```bash
-protoc --proto_path=src --cpp_out=build/gen src/foo.proto src/bar/baz.proto
-```
+- **示例/实践**
+  ```bash
+  protoc --proto_path=src --cpp_out=build/gen src/foo.proto src/bar/baz.proto
+  ```
 
-编译器读取 `src/foo.proto` 和 `src/bar/baz.proto`，生成四个输出文件：
+- 编译器读取 `src/foo.proto` 和 `src/bar/baz.proto`，生成四个输出文件：
+  - `build/gen/foo.pb.h`、`build/gen/foo.pb.cc`
+  - `build/gen/bar/baz.pb.h`、`build/gen/bar/baz.pb.cc`
 
-- `build/gen/foo.pb.h`、`build/gen/foo.pb.cc`
-- `build/gen/bar/baz.pb.h`、`build/gen/bar/baz.pb.cc`
+> ⚠️ **关键区分**：`-I`/`--proto_path` 是 `.proto` 的**源目录**；`--cpp_out` 才是 C++ 代码的**输出目录**
+> ⚠️ **警告**：编译器会自动创建 `build/gen/bar`，但**不会**创建 `build` 或 `build/gen`——输出目录必须事先建好
+> 💡 **理解技巧**：`.pb.h`/`.pb.cc` 就是普通 C++ 文件，编译项目时把它们一起编译、链接 protobuf 库即可
 
-> ⚠️ **关键区分**：`-I`/`--proto_path` 是 `.proto` 的**源目录**；`--cpp_out` 才是 C++ 代码的**输出目录**。
-> ⚠️ **警告**：编译器会自动创建 `build/gen/bar`，但**不会**创建 `build` 或 `build/gen`——输出目录必须事先建好。
-> 💡 **理解技巧**：`.pb.h`/`.pb.cc` 就是普通 C++ 文件，编译项目时把它们一起编译、链接 protobuf 库即可。
-> 📋 **术语提醒**：`protoc` 是 Protocol Buffers 编译器（compiler）的命令行工具。
 
 ---
 
 <a id="id3"></a>
 ## ✅ 知识点3: package 与 C++ 命名空间
 
-**`.proto` 里的 `package` 声明，在 C++ 中直接变成嵌套的 `namespace`。**
+**`.proto` 里的 `package` 声明，在 C++ 中直接变成嵌套的 `namespace`**
 
 - 如果 `.proto` 文件包含 `package` 声明，该文件的**所有内容**都会放进对应的 C++ 命名空间中
 
-**示例/实践**
-```proto
-package foo.bar;
-```
+- **示例/实践**
+  ```proto
+  package foo.bar;
+  ```
 
 - 文件中的所有声明都将驻留在 `foo::bar` 命名空间中
 
-**注意点**
-> 💡 **理解技巧**：`package` 的主要作用是防止不同项目之间的命名冲突——和 C++ 引入命名空间的动机一模一样。
-> 🔄 **知识关联**：notes/01 的 RPC 教程中 `.proto` 写的是 `package fixbug;`，所以生成的服务类全名是 `fixbug::UserServiceRpc`。
-> 📋 **术语提醒**：`package` 在 C++ 中映射为 `namespace`，在 Java 中映射为 `package`。
+> 💡 **理解技巧**：`package` 的主要作用是防止不同项目之间的命名冲突——和 C++ 引入命名空间的动机一模一样
+> 📋 **术语提醒**：`package` 在 C++ 中映射为 `namespace`，在 Java 中映射为 `package`
 
 ---
 
 <a id="id4"></a>
 ## ✅ 知识点4: 生成的消息类
 
-**每个 `message` 生成一个公开继承 `google::protobuf::Message` 的具体类——直接用就好，但千万不要去继承它。**
+**如何生成消息类...**
 
-**类骨架：**
-```proto
-message Foo {}
-```
+- **每个 `message` 生成一个公开继承 `google::protobuf::Message` 的具体类——直接用就好，但千万不要去继承它**
 
-- 编译器生成名为 `Foo` 的类，**公开派生自 `google::protobuf::Message`**
-- 它是**具体类**：没有未实现的纯虚方法
-- **你不应该创建自己的 `Foo` 子类**——许多生成的调用做了去虚拟化（devirtualization）优化，你重写的虚方法可能会被忽略
+- **类骨架：**
+  ```proto
+  message Foo {}
+  ```
 
-**从 `Message` 接口继承的整消息操作方法：**
+  - 编译器生成名为 `Foo` 的类，**公开派生自 `google::protobuf::Message`**
+  - 它是**具体类**：没有未实现的纯虚方法
+  - **你不应该创建自己的 `Foo` 子类**——许多生成的调用做了去虚拟化（devirtualization）优化，你重写的虚方法可能会被忽略
 
-- `bool ParseFromString(::absl::string_view data)`：从序列化二进制字符串（`线格式(wire format)`）解析消息
-- `bool SerializeToString(string* output) const`：把消息序列化为二进制字符串
-- `string DebugString()`：返回 proto 的 text_format 可读表示，**只应用于调试**
+- **`Message` 接口定义了允许您检查、操作、读取或写入整个消息的方法：**
 
-**生成类自己定义的方法：**
+  - `bool ParseFromString(::absl::string_view data)`：从序列化二进制字符串（`线格式(wire format)`）解析消息
+  - `bool SerializeToString(string* output) const`：把消息序列化为二进制字符串
+  - `string DebugString()`：返回 `proto` 的 `text_format` 可读表示，**只应用于调试**
 
-- `Foo()` / `~Foo()`：默认构造与析构
-- `Foo(const Foo& other)` / `Foo(Foo&& other)`：拷贝构造 / 移动构造
-- `operator=`：拷贝赋值 / 移动赋值
-- `void Swap(Foo* other)`：与另一个消息交换内容
-- `unknown_fields()` / `mutable_unknown_fields()`：访问解析此消息时遇到的`未知字段集(UnknownFieldSet)`
+- **生成类自己定义的方法：**
 
-**静态方法：**
+  - `Foo()` / `~Foo()`：默认构造与析构
+  - `Foo(const Foo& other)` / `Foo(Foo&& other)`：拷贝构造 / 移动构造
+  - `operator=`：拷贝赋值 / 移动赋值
+  - `void Swap(Foo* other)`：与另一个消息交换内容
+  - `unknown_fields()` / `mutable_unknown_fields()`：访问解析此消息时遇到的`未知字段集(UnknownFieldSet)`
 
-- `static const Descriptor* descriptor()`：类型`描述符(Descriptor)`——包含字段及类型信息，可配合`反射(reflection)`以编程方式检查字段
-- `static const Foo& default_instance()`：常量单例，等同于新构造的 `Foo`（所有单值字段未设置、所有重复字段为空）
+- **静态方法：**
 
-**优化选项（了解即可）：**
+  - `static const Descriptor* descriptor()`：类型`描述符(Descriptor)`——包含字段及类型信息，可配合`反射(reflection)`以编程方式检查字段
+  - `static const Foo& default_instance()`：常量单例，等同于新构造的 `Foo`（所有单值字段未设置、所有重复字段为空）
 
-- `option optimize_for = CODE_SIZE;`：只重写最小方法集，其余依赖基于反射的实现——代码显著变小，但性能降低
-- `option optimize_for = LITE_RUNTIME;`：实现 `MessageLite` 子集接口（不支持描述符/反射），只需链接小得多的 `libprotobuf-lite`，适合手机等资源受限系统
+- **优化选项（了解即可）：**
 
-**注意点**
+  - `option optimize_for = CODE_SIZE;`：只重写最小方法集，其余依赖基于反射的实现——**代码显著变小，但性能降低**
+  - `option optimize_for = LITE_RUNTIME;`：实现 `MessageLite` 子集接口（不支持描述符/反射），只需链接小得多的 `libprotobuf-lite.so`，适合手机等资源受限系统
+
+
 > ⚠️ **关键区分**：拷贝构造和赋值运算符是**深拷贝**——每个消息对象拥有自己的数据副本，改副本不影响原件，也不会双重释放。
 > ⚠️ **警告**：不要继承生成的消息类来"加功能"——请改用组合或自由函数。
 > 💡 **理解技巧**：`DebugString()` 是调试好朋友：`std::cout << foo.DebugString();` 直接打印整个消息内容。
