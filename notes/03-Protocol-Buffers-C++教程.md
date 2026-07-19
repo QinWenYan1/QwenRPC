@@ -133,7 +133,8 @@
   - `Foo(const Foo& other)` / `Foo(Foo&& other)`：拷贝构造 / 移动构造
   - `operator=`：拷贝赋值 / 移动赋值
   - `void Swap(Foo* other)`：与另一个消息交换内容
-  - `unknown_fields()` / `mutable_unknown_fields()`：访问解析此消息时遇到的`未知字段集(UnknownFieldSet)`
+  - `UnknownFieldSet* mutable_unknown_fields()`：返回指向解析此消息时遇到的未知字段的可修改集指针
+    - 如果 `.proto` 文件中指定了 `option optimize_for = LITE_RUNTIME`，则返回类型更改为 `std::string*`
 
 - **静态方法：**
 
@@ -156,26 +157,27 @@
 <a id="id5"></a>
 ## ✅ 知识点5: 嵌套消息类型
 
-**嵌套定义的 message 生成 `Foo_Bar` 类，再用 `typedef` 伪装成 `Foo::Bar`——但前向声明时只能用真名。**
+**嵌套类型...**
 
-**示例/实践**
-```proto
-message Foo {
-  message Bar {}
-}
-```
+- **嵌套定义的 message 生成 `Foo_Bar` 类，再用 `typedef` 伪装成 `Foo::Bar`——但前向声明时只能用真名。**
 
-- 编译器生成**两个类**：`Foo` 和 `Foo_Bar`
-- 并在 `Foo` 内部生成一个 typedef：
+- **示例/实践**
+  ```proto
+  message Foo {
+    message Bar {}
+  }
+  ```
 
-```cpp
-typedef Foo_Bar Bar;
-```
+  - 编译器生成**两个类**：`Foo` 和 `Foo_Bar`
+  - 并在 `Foo` 内部生成一个 typedef：
+
+    ```cpp
+    typedef Foo_Bar Bar;
+    ```
 
 - 因此可以**把它当作嵌套类使用**：`Foo::Bar`
 - **但 C++ 不允许前向声明嵌套类型**——想在另一个文件中前向声明 `Bar`，必须使用真名 `Foo_Bar`
 
-**注意点**
 > ⚠️ **关键区分**：日常写代码用 `Foo::Bar`；需要前向声明时必须写 `Foo_Bar`。
 > 💡 **理解技巧**：`typedef` 就是起别名——`Foo::Bar` 是"艺名"，`Foo_Bar` 是"身份证名"。
 > 📋 **术语提醒**：`前向声明（forward declaration）` 是不给出完整定义、只声明某个类存在的写法，用于减少头文件依赖。
