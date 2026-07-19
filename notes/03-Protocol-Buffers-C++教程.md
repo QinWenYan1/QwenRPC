@@ -317,40 +317,40 @@
   - 不能在 C++ 中前向声明嵌套类型 `Person::PhoneNumber`
   - 但可以前向声明实际的类名 `Person_PhoneNumber`
 
-**示例/实践**
+- **示例/实践**
 
-- protoc 生成的代码（概念示意）——**不是真嵌套类，而是「压平 + typedef」**：
+  - protoc 生成的代码（概念示意）——**不是真嵌套类，而是「压平 + typedef」**：
 
-  ```cpp
-  // 真实生成的类：全局类，名字用下划线压平
-  class Person_PhoneNumber : public google::protobuf::Message { ... };
+    ```cpp
+    // 真实生成的类：全局类，名字用下划线压平
+    class Person_PhoneNumber : public google::protobuf::Message { ... };
 
-  // Person 类内部只放了一行 typedef（别名）
-  class Person : public google::protobuf::Message {
-  public:
-    typedef Person_PhoneNumber PhoneNumber;
-    ...
-  };
-  ```
+    // Person 类内部只放了一行 typedef（别名）
+    class Person : public google::protobuf::Message {
+    public:
+      typedef Person_PhoneNumber PhoneNumber;
+      ...
+    };
+    ```
 
-- 日常使用：两个名字**完全等价**，推荐用别名（可读性好）：
+  - 日常使用：两个名字**完全等价**，推荐用别名（可读性好）：
 
-  ```cpp
-  tutorial::Person::PhoneNumber phone1;   // 别名
-  tutorial::Person_PhoneNumber phone2;    // 真名，与上行是同一个类
-  Person::PhoneNumber* p = person.add_phones();  // 教程写法走的就是别名
-  ```
+    ```cpp
+    tutorial::Person::PhoneNumber phone1;   // 别名
+    tutorial::Person_PhoneNumber phone2;    // 真名，与上行是同一个类
+    Person::PhoneNumber* p = person.add_phones();  // 教程写法走的就是别名
+    ```
 
-- 前向声明场景：头文件里只想「预告」类名、不想 `#include` 整个 `.pb.h` 时，**只能用真名**：
+  - 前向声明场景：头文件里只想「预告」类名、不想 `#include` 整个 `.pb.h` 时，**只能用真名**：
 
-  ```cpp
-  namespace tutorial {
-  class Person_PhoneNumber;      // ✅ 合法：真名是独立的顶层类
-  // class Person::PhoneNumber;  // ❌ 编译错误：别名写在 Person 类体内，
-                                 //    不看 Person 完整定义就无法引用
-  }
-  void PrintPhone(const tutorial::Person_PhoneNumber* phone);
-  ```
+    ```cpp
+    namespace tutorial {
+    class Person_PhoneNumber;      // ✅ 合法：真名是独立的顶层类
+    // class Person::PhoneNumber;  // ❌ 编译错误：别名写在 Person 类体内，
+                                  //    不看 Person 完整定义就无法引用
+    }
+    void PrintPhone(const tutorial::Person_PhoneNumber* phone);
+    ```
 
 > ⚠️ **关键区分**：日常写代码用 `Person::PhoneNumber`，前向声明时要用 `Person_PhoneNumber`。
 > 💡 **理解技巧**：`typedef` 就是给 `Person_PhoneNumber` 起了一个别名 `Person::PhoneNumber`，方便使用。
@@ -403,9 +403,9 @@
 - `bool ParseFromIstream(istream* input);`
   - 从给定的 C++ `istream` 解析消息。
 
-这些方法只是部分解析和序列化选项，完整列表可参阅 `Message` API 参考。
+- 这些方法只是部分解析和序列化选项，完整列表可参阅 `Message` API 参考
 
-**注意点**
+
 > ⚠️ **关键区分**：`SerializeToString` 生成的不是文本字符串，而是二进制字节流；只是借用了 `std::string` 作为容器。
 > 💡 **理解技巧**：`SerializeToOstream` 适合写文件；`SerializeToString` 适合在内存中传递。
 > 🔄 **知识关联**：这些 API 是知识点 11、12 中写入/读取程序的核心。
@@ -417,140 +417,140 @@
 
 **地址簿程序首先将个人详细信息写入地址簿文件：读取旧文件 → 添加新人 → 写回文件**
 
-FSM 风格流程：
+- FSM 风格流程：
 
-- **阶段1: 初始化库**
-  - 事件：程序启动
-  - 动作：调用 `GOOGLE_PROTOBUF_VERIFY_VERSION`
-  - 下一状态：打开输入文件
+  - **阶段1: 初始化库**
+    - 事件：程序启动
+    - 动作：调用 `GOOGLE_PROTOBUF_VERIFY_VERSION`
+    - 下一状态：打开输入文件
 
-- **阶段2: 读取已有地址簿**
-  - 事件：打开文件
-  - 动作：如果文件不存在则创建新文件；否则用 `ParseFromIstream` 解析
-  - 下一状态：添加新联系人
+  - **阶段2: 读取已有地址簿**
+    - 事件：打开文件
+    - 动作：如果文件不存在则创建新文件；否则用 `ParseFromIstream` 解析
+    - 下一状态：添加新联系人
 
-- **阶段3: 添加新联系人**
-  - 事件：用户输入信息
-  - 动作：用 `add_people()` 创建 `Person`，填充字段
-  - 下一状态：写回文件
+  - **阶段3: 添加新联系人**
+    - 事件：用户输入信息
+    - 动作：用 `add_people()` 创建 `Person`，填充字段
+    - 下一状态：写回文件
 
-- **阶段4: 写回文件**
-  - 事件：准备保存
-  - 动作：用 `SerializeToOstream` 写入文件
-  - 下一状态：清理或退出
+  - **阶段4: 写回文件**
+    - 事件：准备保存
+    - 动作：用 `SerializeToOstream` 写入文件
+    - 下一状态：清理或退出
 
-- **阶段5: 清理（可选）**
-  - 事件：程序即将退出
-  - 动作：调用 `ShutdownProtobufLibrary()`
-  - 下一状态：结束
+  - **阶段5: 清理（可选）**
+    - 事件：程序即将退出
+    - 动作：调用 `ShutdownProtobufLibrary()`
+    - 下一状态：结束
 
-**示例/实践**
-```cpp
-#include <iostream>
-#include <fstream>
-#include <string>
-#include "addressbook.pb.h"
-using namespace std;
+- **示例/实践**
+  ```cpp
+  #include <iostream>
+  #include <fstream>
+  #include <string>
+  #include "addressbook.pb.h"
+  using namespace std;
 
-// 根据用户输入填充 Person 消息
-void PromptForAddress(tutorial::Person& person) {
-  cout << "Enter person ID number: ";
-  int id;
-  cin >> id;
-  person.set_id(id);
-  cin.ignore(256, '\n');
+  // 根据用户输入填充 Person 消息
+  void PromptForAddress(tutorial::Person& person) {
+    cout << "Enter person ID number: ";
+    int id;
+    cin >> id;
+    person.set_id(id);
+    cin.ignore(256, '\n');
 
-  cout << "Enter name: ";
-  getline(cin, *person.mutable_name());
+    cout << "Enter name: ";
+    getline(cin, *person.mutable_name());
 
-  cout << "Enter email address (blank for none): ";
-  string email;
-  getline(cin, email);
-  if (!email.empty()) {
-    person.set_email(email);
-  }
-
-  while (true) {
-    cout << "Enter a phone number (or leave blank to finish): ";
-    string number;
-    getline(cin, number);
-    if (number.empty()) {
-      break;
+    cout << "Enter email address (blank for none): ";
+    string email;
+    getline(cin, email);
+    if (!email.empty()) {
+      person.set_email(email);
     }
 
-    tutorial::Person::PhoneNumber* phone_number = person.add_phones();
-    phone_number->set_number(number);
+    while (true) {
+      cout << "Enter a phone number (or leave blank to finish): ";
+      string number;
+      getline(cin, number);
+      if (number.empty()) {
+        break;
+      }
 
-    cout << "Is this a mobile, home, or work phone? ";
-    string type;
-    getline(cin, type);
-    if (type == "mobile") {
-      phone_number->set_type(tutorial::Person::PHONE_TYPE_MOBILE);
-    } else if (type == "home") {
-      phone_number->set_type(tutorial::Person::PHONE_TYPE_HOME);
-    } else if (type == "work") {
-      phone_number->set_type(tutorial::Person::PHONE_TYPE_WORK);
-    } else {
-      cout << "Unknown phone type. Using default." << endl;
+      tutorial::Person::PhoneNumber* phone_number = person.add_phones();
+      phone_number->set_number(number);
+
+      cout << "Is this a mobile, home, or work phone? ";
+      string type;
+      getline(cin, type);
+      if (type == "mobile") {
+        phone_number->set_type(tutorial::Person::PHONE_TYPE_MOBILE);
+      } else if (type == "home") {
+        phone_number->set_type(tutorial::Person::PHONE_TYPE_HOME);
+      } else if (type == "work") {
+        phone_number->set_type(tutorial::Person::PHONE_TYPE_WORK);
+      } else {
+        cout << "Unknown phone type. Using default." << endl;
+      }
     }
   }
-}
 
-int main(int argc, char* argv[]) {
-  // 验证链接的库版本与编译头文件版本兼容
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
+  int main(int argc, char* argv[]) {
+    // 验证链接的库版本与编译头文件版本兼容
+    GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-  if (argc != 2) {
-    cerr << "Usage:  " << argv[0] << " ADDRESS_BOOK_FILE" << endl;
-    return -1;
-  }
-
-  tutorial::AddressBook address_book;
-
-  {
-    // 读取已有地址簿
-    fstream input(argv[1], ios::in | ios::binary);
-    if (!input) {
-      cout << argv[1] << ": File not found.  Creating a new file." << endl;
-    } else if (!address_book.ParseFromIstream(&input)) {
-      cerr << "Failed to parse address book." << endl;
+    if (argc != 2) {
+      cerr << "Usage:  " << argv[0] << " ADDRESS_BOOK_FILE" << endl;
       return -1;
     }
-  }
 
-  // 添加一个地址
-  PromptForAddress(*address_book.add_people());
+    tutorial::AddressBook address_book;
 
-  {
-    // 将新地址簿写回磁盘
-    fstream output(argv[1], ios::out | ios::trunc | ios::binary);
-    if (!address_book.SerializeToOstream(&output)) {
-      cerr << "Failed to write address book." << endl;
-      return -1;
+    {
+      // 读取已有地址簿
+      fstream input(argv[1], ios::in | ios::binary);
+      if (!input) {
+        cout << argv[1] << ": File not found.  Creating a new file." << endl;
+      } else if (!address_book.ParseFromIstream(&input)) {
+        cerr << "Failed to parse address book." << endl;
+        return -1;
+      }
     }
+
+    // 添加一个地址
+    PromptForAddress(*address_book.add_people());
+
+    {
+      // 将新地址簿写回磁盘
+      fstream output(argv[1], ios::out | ios::trunc | ios::binary);
+      if (!address_book.SerializeToOstream(&output)) {
+        cerr << "Failed to write address book." << endl;
+        return -1;
+      }
+    }
+
+    // 可选：删除 libprotobuf 分配的所有全局对象
+    google::protobuf::ShutdownProtobufLibrary();
+
+    return 0;
   }
+  ```
 
-  // 可选：删除 libprotobuf 分配的所有全局对象
-  google::protobuf::ShutdownProtobufLibrary();
+- **关键说明：**
 
-  return 0;
-}
-```
-
-**关键说明：**
-
-- **`GOOGLE_PROTOBUF_VERIFY_VERSION`**：
+  - **`GOOGLE_PROTOBUF_VERIFY_VERSION`**：
   - 使用 C++ Protobuf 库前执行此宏是好习惯。
   - 验证没有意外链接到与编译所用头文件版本不兼容的库版本。
   - 如果检测到版本不匹配，程序将中止。
   - 每个 `.pb.cc` 文件在启动时都会自动调用此宏。
 
-- **`ShutdownProtobufLibrary()`**：
-  - 删除 Protobuf 库分配的所有全局对象。
-  - 大多数程序不需要，因为进程退出时操作系统会回收内存。
-  - 但如果使用需要释放每个对象的内存泄漏检查器，或编写可能由单个进程多次加载和卸载的库，可能需要强制清理。
+  - **`ShutdownProtobufLibrary()`**：
+    - 删除 Protobuf 库分配的所有全局对象。
+    - 大多数程序不需要，因为进程退出时操作系统会回收内存。
+    - 但如果使用需要释放每个对象的内存泄漏检查器，或编写可能由单个进程多次加载和卸载的库，可能需要强制清理。
 
-**注意点**
+
 > ⚠️ **关键区分**：`GOOGLE_PROTOBUF_VERIFY_VERSION` 不是严格必要，但强烈建议；`ShutdownProtobufLibrary()` 绝大多数情况下不需要。
 > 💡 **理解技巧**：`add_people()` 返回的是 `Person*` 指针，可以直接用 `*add_people()` 解引用后传给 `PromptForAddress`。
 > 📋 **术语提醒**：`Arena` 相关知识见知识点 14。
@@ -562,113 +562,111 @@ int main(int argc, char* argv[]) {
 
 **读取程序打开地址簿文件，解析所有联系人并打印信息。**
 
-FSM 风格流程：
+- FSM 风格流程：
 
-- **阶段1: 初始化库**
-  - 事件：程序启动
-  - 动作：调用 `GOOGLE_PROTOBUF_VERIFY_VERSION`
-  - 下一状态：打开输入文件
+  - **阶段1: 初始化库**
+    - 事件：程序启动
+    - 动作：调用 `GOOGLE_PROTOBUF_VERIFY_VERSION`
+    - 下一状态：打开输入文件
 
-- **阶段2: 解析地址簿**
-  - 事件：文件已打开
-  - 动作：用 `ParseFromIstream` 将文件内容解析到 `AddressBook`
-  - 下一状态：遍历打印
+  - **阶段2: 解析地址簿**
+    - 事件：文件已打开
+    - 动作：用 `ParseFromIstream` 将文件内容解析到 `AddressBook`
+    - 下一状态：遍历打印
 
-- **阶段3: 遍历并打印**
-  - 事件：解析成功
-  - 动作：遍历 `people()`，再遍历每个 `Person` 的 `phones()`
-  - 下一状态：清理或退出
+  - **阶段3: 遍历并打印**
+    - 事件：解析成功
+    - 动作：遍历 `people()`，再遍历每个 `Person` 的 `phones()`
+    - 下一状态：清理或退出
 
-**示例/实践**
-```cpp
-#include <iostream>
-#include <fstream>
-#include <string>
-#include "addressbook.pb.h"
-using namespace std;
+- **示例/实践**
+  ```cpp
+  #include <iostream>
+  #include <fstream>
+  #include <string>
+  #include "addressbook.pb.h"
+  using namespace std;
 
-// 遍历 AddressBook 中所有人并打印信息
-void ListPeople(const tutorial::AddressBook& address_book) {
-  for (const tutorial::Person& person : address_book.people()) {
-    cout << "Person ID: " << person.id() << endl;
-    cout << "  Name: " << person.name() << endl;
-    if (!person.has_email()) {
-      cout << "  E-mail address: " << person.email() << endl;
-    }
-
-    for (const tutorial::Person::PhoneNumber& phone_number : person.phones()) {
-      switch (phone_number.type()) {
-        case tutorial::Person::PHONE_TYPE_MOBILE:
-          cout << "  Mobile phone #: ";
-          break;
-        case tutorial::Person::PHONE_TYPE_HOME:
-          cout << "  Home phone #: ";
-          break;
-        case tutorial::Person::PHONE_TYPE_WORK:
-          cout << "  Work phone #: ";
-          break;
-        case tutorial::Person::PHONE_TYPE_UNSPECIFIED:
-        default:
-          cout << "  Phone #: ";
-          break;
+  // 遍历 AddressBook 中所有人并打印信息
+  void ListPeople(const tutorial::AddressBook& address_book) {
+    for (const tutorial::Person& person : address_book.people()) {
+      cout << "Person ID: " << person.id() << endl;
+      cout << "  Name: " << person.name() << endl;
+      if (!person.has_email()) {
+        cout << "  E-mail address: " << person.email() << endl;
       }
-      cout << phone_number.number() << endl;
+
+      for (const tutorial::Person::PhoneNumber& phone_number : person.phones()) {
+        switch (phone_number.type()) {
+          case tutorial::Person::PHONE_TYPE_MOBILE:
+            cout << "  Mobile phone #: ";
+            break;
+          case tutorial::Person::PHONE_TYPE_HOME:
+            cout << "  Home phone #: ";
+            break;
+          case tutorial::Person::PHONE_TYPE_WORK:
+            cout << "  Work phone #: ";
+            break;
+          case tutorial::Person::PHONE_TYPE_UNSPECIFIED:
+          default:
+            cout << "  Phone #: ";
+            break;
+        }
+        cout << phone_number.number() << endl;
+      }
     }
   }
-}
 
-int main(int argc, char* argv[]) {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
+  int main(int argc, char* argv[]) {
+    GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-  if (argc != 2) {
-    cerr << "Usage:  " << argv[0] << " ADDRESS_BOOK_FILE" << endl;
-    return -1;
-  }
-
-  tutorial::AddressBook address_book;
-
-  {
-    // 读取地址簿
-    fstream input(argv[1], ios::in | ios::binary);
-    if (!address_book.ParseFromIstream(&input)) {
-      cerr << "Failed to parse address book." << endl;
+    if (argc != 2) {
+      cerr << "Usage:  " << argv[0] << " ADDRESS_BOOK_FILE" << endl;
       return -1;
     }
+
+    tutorial::AddressBook address_book;
+
+    {
+      // 读取地址簿
+      fstream input(argv[1], ios::in | ios::binary);
+      if (!address_book.ParseFromIstream(&input)) {
+        cerr << "Failed to parse address book." << endl;
+        return -1;
+      }
+    }
+
+    ListPeople(address_book);
+
+    google::protobuf::ShutdownProtobufLibrary();
+
+    return 0;
   }
+  ```
 
-  ListPeople(address_book);
 
-  google::protobuf::ShutdownProtobufLibrary();
-
-  return 0;
-}
-```
-
-**注意点**
-> ⚠️ **关键区分**：读取时用 `ParseFromIstream`；写入时用 `SerializeToOstream`。
-> ⚠️ **源码细节注意**：示例中 `if (!person.has_email())` 的写法看起来像是印刷错误。在 `edition = "2023"` 且 `email` 未标记 `optional` 时，默认不存在 `has_email()` 方法；即使存在，语义上通常也应该是「有 email 才打印」。学习时以理解遍历逻辑为主，实际编码应写为 `if (person.has_email())`。
-> 💡 **理解技巧**：遍历 repeated 字段就像遍历 `std::vector`，用范围 for 循环即可。
-> 📋 **术语提醒**：`has_email()` 检查的是显式存在；如果 `email` 是隐式存在字段，则没有 `has_email()`。
+> ⚠️ **关键区分**：读取时用 `ParseFromIstream`；写入时用 `SerializeToOstream`
+> 💡 **理解技巧**：遍历 repeated 字段就像遍历 `std::vector`，用范围 for 循环即可
+> 📋 **术语提醒**：`has_email()` 检查的是显式存在；如果 `email` 是隐式存在字段，则没有 `has_email()`
 
 ---
 
 <a id="id13"></a>
 ## ✅ 知识点13: 扩展 Protocol Buffer 的兼容规则
 
-**发布使用 Protobuf 的代码后，可能需要改进 `.proto` 定义。要保持向后兼容和向前兼容，需遵守字段编号规则。**
+**发布使用 Protobuf 的代码后，可能需要改进 `.proto` 定义。要保持向后兼容和向前兼容，需遵守字段编号规则**
 
-### 必须遵守的规则
+- **必须遵守的规则**
+  1. **不得更改任何现有字段的字段编号**
+      - 字段编号是二进制格式中的身份标识，一旦确定就不能改。
 
-1. **不得更改任何现有字段的字段编号**
-   - 字段编号是二进制格式中的身份标识，一旦确定就不能改。
+  2. **可以删除 singular 或 repeated 字段**
+      - 删除后，旧代码读取新消息时该字段取默认值；
+      - 旧代码发送的旧消息中新代码看不到该字段。
 
-2. **可以删除 singular 或 repeated 字段**
-   - 删除后，旧代码读取新消息时该字段取默认值；
-   - 旧代码发送的旧消息中新代码看不到该字段。
-
-3. **可以添加新的 singular 或 repeated 字段**
-   - 但必须使用**新的字段编号**；
-   - 「新编号」指该 Protocol Buffer 中从未使用过的编号，包括已被删除的字段。
+  3. **可以添加新的 singular 或 repeated 字段**
+      - 但必须使用**新的字段编号**；
+      - 「新编号」指该 Protocol Buffer 中从未使用过的编号，包括已被删除的字段。
 
 ### 兼容效果
 
