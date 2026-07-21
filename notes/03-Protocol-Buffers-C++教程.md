@@ -785,7 +785,7 @@
          └→ RpcChannel::CallMethod   // 框架手写：真正的网络收发
   ```
 
-- **框架实现 `CallMethod` 的六步**（完整细节见 [notes/01](01-RPC框架实现-ZooKeeper-ProtoBuf-Muduo.md) 知识点12）：
+- **框架实现 `CallMethod` 的六步**：
   1. 从 `method` 描述符取出服务名 + 方法名
   2. 序列化 `request`
   3. 拼 RPC 头部（服务名、方法名、参数长度）
@@ -795,10 +795,9 @@
 
 - **姊妹接口 `RpcController`**：单次调用的「控制面板」——报错 `SetFailed`、取消等，框架同样可自行实现。
 
-> ⚠️ **关键区分**：`Stub` 是 protoc **生成**的（只负责转发），`RpcChannel` 是框架**手写**的（负责网络）——客户端代码一半白拿、一半自己造。
-> 💡 **理解技巧**：`RpcChannel` 就像电源插座的标准——protobuf 只规定插口形状，框架（`MprpcChannel`）才是插上去的电器。
-> 🔄 **知识关联**：`MprpcChannel` 的完整实现见 [notes/01](01-RPC框架实现-ZooKeeper-ProtoBuf-Muduo.md) 知识点12；服务端对称的分发入口 `Service::CallMethod` 见 notes/01 知识点11。
-> 📋 **术语提醒**：`通道（channel）` 在 RPC 语境中泛指「一次调用从客户端到服务端的传输通路」。
+> ⚠️ **关键区分**：`Stub` 是 protoc **生成**的（只负责转发），`RpcChannel` 是框架**手写**的（负责网络）——客户端代码一半白拿、一半自己造
+> 💡 **理解技巧**：`RpcChannel` 就像电源插座的标准——protobuf 只规定插口形状，框架（`RpcChannel`）才是插上去的电器
+> 📋 **术语提醒**：`通道（channel）` 在 RPC 语境中泛指「一次调用从客户端到服务端的传输通路」
 
 ---
 
