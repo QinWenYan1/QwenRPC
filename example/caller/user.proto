@@ -1,1 +1,28 @@
-syntax = "proto3"
+syntax = "proto3";
+
+pakage fixbug;
+
+option cc_generic_services = true; 
+
+message ResultCode
+{
+    int32 errorcode = 1; 
+    bytes errmsg = 2; 
+}
+
+message LoginRequest
+{
+    bytes name = 1; 
+    bytes pwd = 2; 
+}
+
+message LoginResponse
+{
+    ResultCode result = 1; 
+    bool sucess = 2; 
+}
+
+service UserServiceRpc
+{
+    rpc login(LoginRequest) return (LoginResponse); 
+}
