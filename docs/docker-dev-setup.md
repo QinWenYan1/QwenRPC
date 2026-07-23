@@ -13,6 +13,7 @@
 - [方式一：从 Docker Hub 拉取镜像](#方式一从-docker-hub-拉取镜像)
 - [方式二：本地构建镜像](#方式二本地构建镜像)
 - [启动开发容器](#启动开发容器)
+  - [方式 B：VS Code Dev Containers（推荐日常开发）](#方式-bvs-code-dev-containers推荐日常开发)
 - [Dockerfile 关键配置说明](#dockerfile-关键配置说明)
 - [进阶：推送自己的镜像](#进阶推送自己的镜像)
 - [常见问题](#常见问题)
@@ -89,6 +90,13 @@ docker build -f docker/Dockerfile.dev -t qwenrpc-dev .
 
 ## 启动开发容器
 
+进入开发环境有两条入口，**镜像和挂载目录完全相同，可按场景混用**：
+
+- **方式 A：`docker run`** —— 纯终端，适合一次性操作（起停 ZooKeeper、手动跑 protoc、临时调试）；
+- **方式 B：VS Code Dev Containers** —— 编辑器直接住进容器，日常写代码推荐。
+
+### 方式 A：docker run（纯终端）
+
 ```bash
 docker run -it --rm \
   -v "$(pwd)":/workspace \
@@ -112,6 +120,33 @@ root@xxxxxx:/workspace#
 ```
 
 这表示你已经进入容器内部，当前目录就是你项目的根目录。
+
+### 方式 B：VS Code Dev Containers（推荐日常开发）
+
+仓库根目录带有 `.devcontainer/devcontainer.json`，VS Code 可以据此把整套开发环境（编辑器、clangd、CMake Tools）直接放进容器里。
+
+**前置条件**：
+
+1. VS Code 安装扩展 **Dev Containers**（`ms-vscode-remote.remote-containers`）；
+2. Docker Desktop 处于运行状态（未运行时扩展会提示启动）。
+
+**首次进入**：
+
+1. 用 VS Code 打开项目根目录；
+2. 右下角弹出通知 "Folder contains a Dev Container configuration file"，点击 **Reopen in Container**（也可在命令面板执行 `Dev Containers: Reopen in Container`）；
+3. 扩展随后自动完成：用镜像新建一个由它管理的容器 → 把仓库挂载到 `/workspace` → 在容器内安装 clangd 与 CMake Tools。首次需稍等片刻。
+
+**之后进入**：VS Code「最近打开」列表中本项目会带上容器标记，从那里打开即直接进入容器。
+
+**退出与生命周期**：
+
+- 关闭 VS Code 窗口，容器**默认继续运行**，下次进入秒开；
+- 退出容器环境：点击左下角绿色远程标志 → `Close Remote Connection`；
+- 需要停止容器时：`docker ps` 查到它后 `docker stop <容器ID>`。
+
+> ⚠️ **两种入口的共存纪律**：
+> - 两种方式启动的是**两个相互独立的容器实例**，但共享同一个 `/workspace`（即本仓库）以及其中的 `build/` 产物目录——**不要同时在两个容器里执行构建**；
+> - `.pb.cc/.pb.h` 一律以容器内 `protoc`（3.12.4）生成的版本为准，**一切编译构建只在容器内进行**（mac 本机的 protobuf 版本不同，混用会报错）。
 
 ---
 
